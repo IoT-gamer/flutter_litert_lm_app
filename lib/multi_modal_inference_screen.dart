@@ -22,9 +22,14 @@ class _MultiModalInferenceScreenState extends State<MultiModalInferenceScreen> {
   String _inferenceResult = "Awaiting input...";
   bool _isProcessing = false;
 
+  double? _selectedDimension = 700; // Default to 280 Token Budget
+
   Future<void> _pickImage() async {
     final XFile? pickedFile = await _picker.pickImage(
       source: ImageSource.gallery,
+      maxHeight: _selectedDimension,
+      maxWidth: _selectedDimension,
+      imageQuality: 85, // Leave this at a static 80-85
     );
 
     if (pickedFile != null) {
@@ -114,6 +119,34 @@ class _MultiModalInferenceScreenState extends State<MultiModalInferenceScreen> {
                   : const Center(
                       child: Icon(Icons.image, size: 50, color: Colors.grey),
                     ),
+            ),
+            const SizedBox(height: 16),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text("Gemma Token Budget: "),
+                DropdownButton<double>(
+                  value: _selectedDimension,
+                  items: const [
+                    DropdownMenuItem(value: 350, child: Text("70 (Fast)")),
+                    DropdownMenuItem(value: 500, child: Text("140")),
+                    DropdownMenuItem(value: 700, child: Text("280 (Balanced)")),
+                    DropdownMenuItem(value: 1000, child: Text("560")),
+                    DropdownMenuItem(
+                      value: 1400,
+                      child: Text("1120 (OCR / Detail)"),
+                    ),
+                  ],
+                  onChanged: _isProcessing
+                      ? null
+                      : (value) {
+                          setState(() {
+                            _selectedDimension = value;
+                          });
+                        },
+                ),
+              ],
             ),
             const SizedBox(height: 16),
 

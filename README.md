@@ -19,7 +19,8 @@ This repository showcases a hybrid architecture for high-performance Edge AI:
 * **On-Device Inference**: No cloud dependencies; all processing stays on the hardware.
 * **Multimodal Capabilities**: Processes both text prompts and image files simultaneously.
 * **Hardware Acceleration**: Configured to use GPU for vision processing and CPU for language modeling.
-* **Optimized Image Handling**: Uses `image_picker` for native-side resizing and quality control before inference.
+* **Variable Resolution Control**: Empowers users to balance inference speed and spatial accuracy by selecting specific Gemma 4 Token Budgets (70 to 1120 tokens).
+* **Optimized Image Handling**: Uses `image_picker` coupled with token budget calculations for native-side resizing and quality control *before* inference.
 * **Clean Architecture**: Segregated `InferenceService` layer for easy maintenance and testing.
 
 ## 📁 Repository Structure
@@ -107,6 +108,17 @@ The `LitertBridge` is configured to optimize performance across different proces
 * **Audio:** CPU (`Backend.CPU()`)
 
 ***TODO:** Add steps to enable NPU support if available on the device.*
+
+### Token Budgets & Image Resizing
+To prevent the LiteRT engine from wasting cycles downscaling images in memory, the app calculates the optimal input resolution based on Gemma 4's expected Token Budgets.
+
+Using the formula `Dimension ≈ √(Token Budget × 9 × 14²)`, the image_picker native layer directly scales the image to the exact pixel footprint the model needs:
+
+* **70 Tokens:** ~350x350px (Fastest)
+
+* **280 Tokens:** ~700x700px (Balanced)
+
+* **1120 Tokens:** ~1400x1400px (Slowest, suitable for OCR/detail)
 
 ### Memory Management
 The app utilizes `package:jni` for efficient memory handling. Native strings (`JString`) and objects are manually released in the `InferenceService` within `finally` blocks to prevent memory leaks across the bridge.
