@@ -19,6 +19,7 @@ This repository showcases a hybrid architecture for high-performance Edge AI:
 * **On-Device Inference**: No cloud dependencies; all processing stays on the hardware.
 * **Multimodal Capabilities**: Processes both text prompts and image files simultaneously.
 * **Hardware Acceleration**: Configured to use GPU for vision processing and CPU for language modeling.
+* **Multi-Token Prediction (MTP)**: Utilizes experimental speculative decoding to significantly accelerate decode speeds on the GPU backend.
 * **Variable Resolution Control**: Empowers users to balance inference speed and spatial accuracy by selecting specific Gemma 4 Token Budgets (70 to 1120 tokens).
 * **Optimized Image Handling**: Uses `image_picker` coupled with token budget calculations for native-side resizing and quality control *before* inference.
 * **Clean Architecture**: Segregated `InferenceService` layer for easy maintenance and testing.
@@ -104,8 +105,10 @@ adb push <your_model.litertlm> /storage/emulated/0/Android/data/com.example.flut
 ### Hardware Configuration
 The `LitertBridge` is configured to optimize performance across different processing units:
 * **Vision:** GPU (`Backend.GPU()`)
-* **Language:** CPU (`Backend.CPU()`)
+* **Language:** CPU (`Backend.GPU()`)
 * **Audio:** CPU (`Backend.CPU()`)
+
+To maximize the performance of the GPU language backend, the engine opts into the ExperimentalApi to enable `ExperimentalFlags.enableSpeculativeDecoding` (Multi-Token Prediction).
 
 ***TODO:** Add steps to enable NPU support if available on the device.*
 

@@ -2,6 +2,8 @@ package com.example.flutter_litert_lm_app
 
 import android.content.Context
 import androidx.annotation.Keep
+import com.google.ai.edge.litertlm.ExperimentalApi
+import com.google.ai.edge.litertlm.ExperimentalFlags
 import com.google.ai.edge.litertlm.Backend
 import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
@@ -19,12 +21,16 @@ class LitertBridge(applicationContext: Any, modelPath: String) {
         val context = applicationContext as Context
         val nativeLibDir = context.applicationInfo.nativeLibraryDir
         
+        // Enable MTP via speculative decoding
+        @OptIn(ExperimentalApi::class)
+        ExperimentalFlags.enableSpeculativeDecoding = true
+
         // Configure the Engine
         val config = EngineConfig(
             modelPath = modelPath,
             // backend = Backend.NPU(nativeLibraryDir = nativeLibDir),
-            backend = Backend.CPU(),
-            visionBackend = Backend.GPU(), // Vision processing thrives on the GPU
+            backend = Backend.GPU(),
+            visionBackend = Backend.GPU(),
             audioBackend = Backend.CPU()
         )
         
