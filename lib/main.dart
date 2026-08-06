@@ -5,34 +5,13 @@ import 'package:path_provider/path_provider.dart';
 import 'inference_service.dart';
 import 'multi_modal_inference_screen.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-
-  try {
-    // Get the path to the model you pushed via ADB
-    final modelPath = await _getModelPath();
-
-    // Initialize the Service
-    final inferenceService = InferenceService();
-    inferenceService.initializeEngine(modelPath);
-
-    runApp(MyApp(inferenceService: inferenceService));
-  } catch (e) {
-    // If the model is missing, show a fallback UI instead of a white screen
-    runApp(
-      MaterialApp(
-        home: Scaffold(
-          body: Center(
-            child: Text("Startup Error: $e\n\nDid you run adb push?"),
-          ),
-        ),
-      ),
-    );
-  }
+  // Launch the app immediately so Flutter can draw the loading UI
+  runApp(const MyApp());
 }
 
 Future<String> _getModelPath() async {
-  // This points to /storage/emulated/0/Android/data/com.example.../files/
   final directory = await getExternalStorageDirectory();
 
   if (directory == null) {
@@ -48,10 +27,33 @@ Future<String> _getModelPath() async {
   return modelFile.path;
 }
 
-class MyApp extends StatelessWidget {
-  final InferenceService inferenceService;
+class MyApp extends StatefulWidget {
+  const MyApp({super.key});
 
-  const MyApp({super.key, required this.inferenceService});
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  late Future<InferenceService> _initFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _initFuture = _initEngine();
+  }
+
+  Future<InferenceService> _initEngine() async {
+    final modelPath = await _getModelPath();
+    final inferenceService = InferenceService();
+
+    // Yield the thread briefly so Flutter can paint the loading spinner UI
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    // Initialize the engine natively
+    inferenceService.initializeEngine(modelPath);
+    return inferenceService;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +63,56 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      home: MultiModalInferenceScreen(inferenceService: inferenceService),
+      home: FutureBuilder<InferenceService>(
+        future: _initFuture,
+        builder: (context, snapshot) {
+          // Show Loading Screen while model initializes
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 24),
+                    Text(
+                      "Initializing LiteRT-LM Engine...",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      "Loading model weights into GPU memory",
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          // Show Error Screen if model fails to load or file is missing
+          if (snapshot.hasError) {
+            return Scaffold(
+              body: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Center(
+                  child: Text(
+                    "Startup Error: ${snapshot.error}\n\nDid you run adb push?",
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ),
+              ),
+            );
+          }
+
+          // Show Main App once initialization completes
+          return MultiModalInferenceScreen(inferenceService: snapshot.data!);
+        },
+      ),
     );
   }
 }
