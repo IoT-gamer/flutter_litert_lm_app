@@ -48,17 +48,6 @@ pubspec.yaml            # Project dependencies
 * **LiteRT-LM Model:** A `.litertlm` compatible model file.
     - for example, [gemma-4-E2B-it-litert-lm](https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/tree/main). select `gemma-4-E2B-it.litertlm` and download it.
 
-## ⛓️ Dependencies
-Ensure your `pubspec.yaml` includes the bleeding-edge `jnigen` fix for Kotlin metadata parsing:
-```yaml
-dev_dependencies:
-  jnigen:
-    git:
-      url: https://github.com/dart-lang/native.git
-      ref: main 
-      path: pkgs/jnigen
-```
-*(Requires Apache Maven installed on your machine for the initial build: `sudo apt-get install maven`)*
 
 ## 🚦 Getting Started
 

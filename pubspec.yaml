@@ -34,22 +34,16 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
-  image: ^4.8.0
+  image: ^4.9.1
   image_picker: ^1.2.1
-  jni: ^1.0.0
-  jni_flutter: ^1.0.1
+  jni: ^1.0.3
+  jni_flutter: ^1.0.2
   path_provider: ^2.1.5
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  #  temporarily use the git version of jnigen until the next release (0.16.1) is out with this fix:
-  #  https://github.com/dart-lang/native/pull/3297
-  jnigen:
-      git:
-        url: https://github.com/dart-lang/native.git
-        ref: main 
-        path: pkgs/jnigen
+  jnigen: ^0.17.0
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
