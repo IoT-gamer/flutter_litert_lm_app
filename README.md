@@ -68,12 +68,19 @@ pubspec.yaml            # Project dependencies
   ```bash
   flutter build apk
   ```
-**2. Generate JNI Bindings**
+**2. Generate JNI Bindings (Optional)**
 
-If you modify the Kotlin `LitertBridge.kt` file, regenerate the Dart bindings:
+**Note:** The JNI bindings are already pre-generated and included in the repository at `lib/src/generated/`. **You only need to run this step if you modify the native `LitertBridge.kt` class.**
+
+If you do modify the Kotlin code, `jnigen` requires the compiled bytecode to generate the Dart interface. You must run a full debug build *before* running the generator:
+
 ```bash
+# 1. Compile the Kotlin code into the build/ directory
+flutter build apk --debug
+
+# 2. Regenerate the Dart JNI bindings
 dart run tool/jnigen.dart
-```
+
 **3. Run the App**
 ```bash
 flutter run
