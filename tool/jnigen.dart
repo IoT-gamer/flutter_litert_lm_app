@@ -1,21 +1,14 @@
 import 'dart:io';
 import 'package:jnigen/jnigen.dart';
 
-void main(List<String> args) {
+Future<void> main(List<String> args) async {
   final packageRoot = Platform.script.resolve('../');
 
-  generateJniBindings(
-    Config(
-      outputConfig: OutputConfig(
-        dartConfig: DartCodeOutputConfig(
-          path: packageRoot.resolve('lib/src/generated/litertlm_bindings.dart'),
-          structure: OutputStructure.singleFile,
-        ),
-      ),
-      // Automatically locates your project's compiled classes and dependencies
-      androidSdkConfig: AndroidSdkConfig(addGradleDeps: true),
-
-      // ADD THIS: Explicitly map the paths where Flutter compiles your Kotlin code
+  final generator = JniGenerator(
+    input: Input(
+      // The specific class you want to generate bindings for
+      classes: ['com.example.flutter_litert_lm_app.LitertBridge'],
+      // Explicitly map the paths where Flutter compiles your Kotlin code
       classPath: [
         packageRoot.resolve(
           'build/app/intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes/',
@@ -24,8 +17,17 @@ void main(List<String> args) {
           'build/app/intermediates/built_in_kotlinc/release/compileReleaseKotlin/classes/',
         ),
       ],
-
-      classes: ['com.example.flutter_litert_lm_app.LitertBridge'],
+      // Configuration to search for Android SDK libraries.
+      androidSdk: AndroidSdk(addGradleDeps: true),
+    ),
+    output: Output(
+      dart: DartOutput(
+        // Output path for generated bindings
+        path: packageRoot.resolve('lib/src/generated/litertlm_bindings.dart'),
+        // Write bindings into a single file (instead of one file per class).
+        structure: OutputStructure.singleFile,
+      ),
     ),
   );
+  await generator.generate();
 }
