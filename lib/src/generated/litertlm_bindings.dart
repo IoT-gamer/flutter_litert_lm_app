@@ -130,6 +130,46 @@ extension LitertBridge$$Methods on LitertBridge {
     ).object<jni$_.JString>();
   }
 
+  static final _id_runAudioInference = LitertBridge._class.instanceMethodId(
+    r'runAudioInference',
+    r'(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;',
+  );
+
+  static final _runAudioInference =
+      jni$_.ProtectedJniExtensions.lookup<
+            jni$_.NativeFunction<
+              jni$_.JniResult Function(
+                jni$_.Pointer<jni$_.Void>,
+                jni$_.JMethodIDPtr,
+                jni$_.VarArgs<
+                  (jni$_.Pointer<jni$_.Void>, jni$_.Pointer<jni$_.Void>)
+                >,
+              )
+            >
+          >('globalEnv_CallObjectMethod')
+          .asFunction<
+            jni$_.JniResult Function(
+              jni$_.Pointer<jni$_.Void>,
+              jni$_.JMethodIDPtr,
+              jni$_.Pointer<jni$_.Void>,
+              jni$_.Pointer<jni$_.Void>,
+            )
+          >();
+
+  /// from: `public fun runAudioInference(prompt: kotlin.String, audioPath: kotlin.String): kotlin.String`
+  /// The returned object must be released after use, by calling the [release] method.
+  jni$_.JString runAudioInference(jni$_.JString string, jni$_.JString string1) {
+    final _$$selfRef = reference;
+    final _$string = string.reference;
+    final _$string1 = string1.reference;
+    return _runAudioInference(
+      _$$selfRef.pointer,
+      _id_runAudioInference.pointer,
+      _$string.pointer,
+      _$string1.pointer,
+    ).object<jni$_.JString>();
+  }
+
   static final _id_close = LitertBridge._class.instanceMethodId(
     r'close',
     r'()V',

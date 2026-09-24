@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'audio_recorder_service.dart';
 import 'inference_service.dart';
 
 class MultiModalInferenceScreen extends StatefulWidget {
@@ -23,6 +25,12 @@ class _MultiModalInferenceScreenState extends State<MultiModalInferenceScreen> {
   bool _isProcessing = false;
 
   double? _selectedDimension = 700; // Default to 280 Token Budget
+
+  final AudioRecorderService _audioService = AudioRecorderService();
+  bool _isRecording = false;
+  int _timeRemaining = 10;
+  Timer? _uiTimer;
+  String? _audioPath;
 
   Future<void> _pickImage() async {
     final XFile? pickedFile = await _picker.pickImage(
@@ -88,11 +96,88 @@ class _MultiModalInferenceScreenState extends State<MultiModalInferenceScreen> {
     }
   }
 
+  void _startAudioRecording() {
+    setState(() {
+      _isRecording = true;
+      _timeRemaining = 10;
+      _inferenceResult = "Recording... $_timeRemaining s";
+    });
+
+    // Update the UI countdown every second
+    _uiTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      setState(() {
+        if (_timeRemaining > 1) {
+          _timeRemaining--;
+          _inferenceResult = "Recording... $_timeRemaining s";
+        } else {
+          timer.cancel();
+        }
+      });
+    });
+
+    _audioService.startRecordingWithLimit(
+      timeLimitSeconds: 10,
+      onRecordingComplete: (path) {
+        _uiTimer?.cancel();
+        setState(() {
+          _isRecording = false;
+          _audioPath = path;
+          _inferenceResult = path != null
+              ? "Audio saved. Ready for inference."
+              : "Permission denied or recording failed.";
+        });
+      },
+    );
+  }
+
+  Future<void> _runAudioInference() async {
+    if (_audioPath == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please record audio first.")),
+      );
+      return;
+    }
+
+    final prompt = _promptController.text;
+    if (prompt.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Please enter a prompt.")));
+      return;
+    }
+
+    setState(() {
+      _isProcessing = true;
+      _inferenceResult = "Analyzing audio...";
+    });
+
+    await Future.delayed(const Duration(milliseconds: 50));
+
+    try {
+      final resultText = await widget.inferenceService.analyzeAudio(
+        prompt,
+        _audioPath!,
+      );
+
+      setState(() {
+        _inferenceResult = resultText;
+      });
+    } catch (e) {
+      setState(() {
+        _inferenceResult = "Error: $e";
+      });
+    } finally {
+      setState(() {
+        _isProcessing = false;
+      });
+    }
+  }
+
   @override
   void dispose() {
+    _uiTimer?.cancel();
+    _audioService.dispose();
     _promptController.dispose();
-    // It's usually better to let the parent (main) manage the service lifecycle,
-    // but if this screen is the only place it's used, you can dispose it here.
     widget.inferenceService.dispose();
     super.dispose();
   }
@@ -150,37 +235,64 @@ class _MultiModalInferenceScreenState extends State<MultiModalInferenceScreen> {
             ),
             const SizedBox(height: 16),
 
+            // Image selection button
             ElevatedButton.icon(
-              onPressed: _isProcessing ? null : _pickImage,
+              onPressed: _isProcessing || _isRecording ? null : _pickImage,
               icon: const Icon(Icons.photo_library),
               label: const Text("Select from Gallery"),
+            ),
+            const SizedBox(height: 12),
+
+            // Audio recording button
+            ElevatedButton.icon(
+              onPressed: _isProcessing || _isRecording
+                  ? null
+                  : _startAudioRecording,
+              icon: Icon(
+                _isRecording ? Icons.mic : Icons.mic_none,
+                color: _isRecording ? Colors.red : null,
+              ),
+              label: Text(
+                _isRecording
+                    ? "Recording ($_timeRemaining s)"
+                    : "Record Audio (10s limit)",
+              ),
             ),
             const SizedBox(height: 24),
 
             TextField(
               controller: _promptController,
-              decoration: const InputDecoration(
-                labelText: "Ask about this image...",
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: _audioPath != null
+                    ? "Ask about this audio..."
+                    : _selectedImage != null
+                    ? "Ask about this image..."
+                    : "Ask about your media...",
+                border: const OutlineInputBorder(),
               ),
               maxLines: 3,
               enabled: !_isProcessing,
             ),
             const SizedBox(height: 16),
 
-            FilledButton.icon(
-              onPressed: _isProcessing ? null : _runInference,
-              icon: _isProcessing
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Icon(Icons.send),
-              label: Text(_isProcessing ? "Analyzing..." : "Run Inference"),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                FilledButton.icon(
+                  onPressed: _isProcessing || _selectedImage == null
+                      ? null
+                      : _runInference,
+                  icon: const Icon(Icons.image),
+                  label: const Text("Analyze Image"),
+                ),
+                FilledButton.icon(
+                  onPressed: _isProcessing || _audioPath == null
+                      ? null
+                      : _runAudioInference,
+                  icon: const Icon(Icons.audiotrack),
+                  label: const Text("Analyze Audio"),
+                ),
+              ],
             ),
             const SizedBox(height: 24),
 

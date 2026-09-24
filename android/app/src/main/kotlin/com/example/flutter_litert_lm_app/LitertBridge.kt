@@ -51,6 +51,19 @@ class LitertBridge(applicationContext: Any, modelPath: String) {
         // Use toString() to extract the generated payload string
         return responseMessage.toString()
     }
+
+    // Accepts the raw audio path directly from Flutter
+    fun runAudioInference(prompt: String, audioPath: String): String {
+        // Instantiate the audio content and text content based on the paths/prompts provided
+        val audioContent = Content.AudioFile(audioPath)
+        val textContent = Content.Text(prompt)
+        
+        // Pass both the audio and text to the LiteRT-LM engine
+        val responseMessage = conversation.sendMessage(Contents.of(audioContent, textContent))
+        
+        // Use toString() to extract the generated payload string
+        return responseMessage.toString()
+    }
     
     fun close() {
         engine.close()

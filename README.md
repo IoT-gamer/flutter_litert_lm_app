@@ -1,6 +1,6 @@
 # Flutter LiteRT-LM Edge AI
 
-A Flutter application demonstrating on-device multimodal AI inference using Google's **LiteRT-LM** via a custom **JNI** bridge using `jnigen`. This project allows users to select images from their gallery and perform visual question-answering (VQA) directly on the device.
+A Flutter application demonstrating on-device multimodal AI inference using Google's **LiteRT-LM** via a custom **JNI** bridge using `jnigen`. This project allows users to select images from their gallery or record audio snippets to perform visual and audio question-answering directly on the device.
 
 Tested with the `gemma-4-E2B-it.litertlm` model from Hugging Face, which supports both vision and language tasks.
 
@@ -17,12 +17,12 @@ This repository showcases a hybrid architecture for high-performance Edge AI:
 ## 🛠️ Features
 
 * **On-Device Inference**: No cloud dependencies; all processing stays on the hardware.
-* **Multimodal Capabilities**: Processes both text prompts and image files simultaneously.
-* **Hardware Acceleration**: Configured to use GPU for vision processing and GPU for language modeling.
+* **Multimodal Capabilities**: Processes text prompts simultaneously with either image files or 16kHz mono WAV audio recordings.
+* **Hardware Acceleration**: Configured to use GPU for vision processing and GPU for language modeling, while routing audio processing to the CPU.
 * **Multi-Token Prediction (MTP)**: Utilizes experimental speculative decoding to significantly accelerate decode speeds on the GPU backend.
 * **Variable Resolution Control**: Empowers users to balance inference speed and spatial accuracy by selecting specific Gemma 4 Token Budgets (70 to 1120 tokens).
-* **Optimized Image Handling**: Uses `image_picker` coupled with token budget calculations for native-side resizing and quality control *before* inference.
-* **Clean Architecture**: Segregated `InferenceService` layer for easy maintenance and testing.
+* **Optimized Input Handling**: Uses `image_picker` for native-side resizing, and the `record` package with strict Dart timers to enforce lightweight 10-second audio constraints before inference.
+* **Clean Architecture**: Segregated `InferenceService` and `AudioRecorderService` layers for easy maintenance and testing.
 
 ## 📁 Repository Structure
 
@@ -35,6 +35,7 @@ lib/
   ├── src/generated/    # Auto-generated JNI bindings (via jnigen)
   ├── main.dart         # App entry and initialization
   ├── inference_service.dart # Bridge between Flutter and Native
+  ├── audio_recorder_service.dart # Audio recorder
   └── multi_modal_inference_screen.dart # Main UI
 tool/
   └── jnigen.dart       # JNI binding generation script
@@ -103,6 +104,8 @@ The `LitertBridge` is configured to optimize performance across different proces
 * **Vision:** GPU (`Backend.GPU()`)
 * **Language:** GPU (`Backend.GPU()`)
 * **Audio:** CPU (`Backend.CPU()`)
+
+*Note on Audio:* The underlying `miniaudio` preprocessor strictly requires standard PCM WAV files. The app is configured to record mono audio at 16kHz to ensure compatibility with the LiteRT C++ pipeline.
 
 To maximize the performance of the GPU language backend, the engine opts into the ExperimentalApi to enable `ExperimentalFlags.enableSpeculativeDecoding` (Multi-Token Prediction).
 

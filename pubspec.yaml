@@ -39,6 +39,7 @@ dependencies:
   jni: ^1.0.3
   jni_flutter: ^1.0.2
   path_provider: ^2.1.5
+  record: ^7.1.1
 
 dev_dependencies:
   flutter_test:

@@ -37,6 +37,22 @@ class InferenceService {
     }
   }
 
+  // Call this when the user finishes recording audio and clicks to run inference
+  Future<String> analyzeAudio(String prompt, String audioPath) async {
+    final jPrompt = prompt.toJString();
+    final jPath = audioPath.toJString();
+
+    try {
+      // Calls the generated JNI binding for the Kotlin audio method
+      final result = _bridge.runAudioInference(jPrompt, jPath);
+      return result.toDartString();
+    } finally {
+      // Always prevent memory leaks across the JNI bridge
+      jPrompt.release();
+      jPath.release();
+    }
+  }
+
   void dispose() {
     _bridge.close();
   }
